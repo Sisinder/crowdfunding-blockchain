@@ -26,26 +26,6 @@ pipeline {
             }
         }
         
-        stage('Deploy to Production') {
-            when {
-                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
-            }
-            steps {
-                script{
-                    def deployTarget = params.DEPLOY_TARGET
-                }
-                try {
-                        // Perform the deployment using the specified target
-                        sh "truffle migrate --network ${deployTarget}"
-                    } catch (Exception e) {
-                        // Handle any deployment errors
-                        currentBuild.result = 'FAILURE'
-                        error("Deployment to ${deployTarget} failed: ${e.message}")
-                    }
-
-            }
-        }
-        
         stage('Deployment to Production') {
             when {
                 expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
@@ -56,18 +36,19 @@ pipeline {
                     def productionNetworkUrl = 'https://production-node-url'
                     def privateKey = 'your-private-key'
                     def contractArtifactPath = 'path-to-compiled-contracts'
+                    def deployTarget = params.DEPLOY_TARGET
 
                     try {
                         // Deploy your smart contracts to the production network
                         // Example for Ethereum:
-                        sh "truffle migrate --network production --f 0 --to 1 --reset --from ${privateKey}"
+                        sh "truffle migrate --network ${deployTarget} --f 0 --to 1 --reset --from ${privateKey}"
 
                         // You may need to update other necessary configurations
                         // Example: Update API endpoints, contract addresses, etc.
                     } catch (Exception e) {
                         // Handle any deployment errors
                         currentBuild.result = 'FAILURE'
-                        error("Deployment to production failed: ${e.message}")
+                        error("Deployment to ${deployTarget} failed: ${e.message}")
                     }
                 }
              }
