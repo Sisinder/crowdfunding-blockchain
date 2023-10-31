@@ -1,0 +1,76 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Build and Test') {
+            steps {
+                sh 'npm install' // Install dependencies (e.g., Truffle, web3.js)
+                sh 'truffle compile' // Compile your smart contracts
+                sh 'truffle test' // Run unit tests
+                sh 'npm run lint' // Check for coding style compliance (optional)
+            }
+        }
+        
+        stage('Deploy to Test Network') {
+            when {
+                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
+            }
+            steps {
+                sh 'truffle migrate --network test' // Deploy to a test blockchain network
+            }
+        }
+        
+        stage('Deploy to Production') {
+            when {
+                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
+            }
+            steps {
+                script{
+                    def deployTarget = params.DEPLOY_TARGET
+                }
+                try {
+                        // Perform the deployment using the specified target
+                        sh "truffle migrate --network ${deployTarget}"
+                    } catch (Exception e) {
+                        // Handle any deployment errors
+                        currentBuild.result = 'FAILURE'
+                        error("Deployment to ${deployTarget} failed: ${e.message}")
+                    }
+
+            }
+        }
+        
+        stage('Deployment to Production') {
+            when {
+                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
+            }
+            steps {
+                script {
+                    // Define your production blockchain network settings and configurations
+                    def productionNetworkUrl = 'https://production-node-url'
+                    def privateKey = 'your-private-key'
+                    def contractArtifactPath = 'path-to-compiled-contracts'
+
+                    try {
+                        // Deploy your smart contracts to the production network
+                        // Example for Ethereum:
+                        sh "truffle migrate --network production --f 0 --to 1 --reset --from ${privateKey}"
+
+                        // You may need to update other necessary configurations
+                        // Example: Update API endpoints, contract addresses, etc.
+                    } catch (Exception e) {
+                        // Handle any deployment errors
+                        currentBuild.result = 'FAILURE'
+                        error("Deployment to production failed: ${e.message}")
+                    }
+                }
+             }
+        }
+    }
+}
