@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from "uuid";
-import FundCard from './FundCard.jsx';
+import FundCard from './FundCard';
 import { loader } from '../assets';
 
 const DisplayCampaigns = ({ title, isLoading, campaigns }) => {
